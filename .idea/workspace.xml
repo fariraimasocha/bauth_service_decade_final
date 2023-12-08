@@ -6,9 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="a6842e29-872f-4b9c-8380-4f0f3dae3c21" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth_service/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/auth_service/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth_service/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/auth_service/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/auth_service/src/index.did" beforeDir="false" afterPath="$PROJECT_DIR$/auth_service/src/index.did" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/auth_service/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/auth_service/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -33,16 +30,17 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/farir/Desktop/mutoko&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/farir/Desktop/bauth_service_decade_final&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\PhpStorm 2023.1.1\\plugins\\javascript-impl\\jsLanguageServicesImpl\\external&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\WebStorm 2023.1\\plugins\\javascript-impl\\jsLanguageServicesImpl\\external&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -59,6 +57,9 @@
       <workItem from="1701081416335" duration="6452000" />
       <workItem from="1701091770917" duration="411000" />
       <workItem from="1701094383542" duration="227000" />
+      <workItem from="1702019987050" duration="721000" />
+      <workItem from="1702020881763" duration="1999000" />
+      <workItem from="1702023174336" duration="144000" />
     </task>
     <servers />
   </component>
