@@ -1,5 +1,7 @@
-import { update, query, Principal, text, StableBTreeMap, Record, Vec, Opt, nat64, match, Result, HttpRequest, HttpResponse } from 'azle';
+import { update, query, Principal, text, StableBTreeMap, Record, Vec, Opt, nat64, match, Result, HttpRequest, HttpResponse, Canister } from 'azle';
 import { v4 as uuidv4 } from 'uuid';
+
+
 
 // Define the data structure
 type User = {
@@ -20,6 +22,13 @@ type UserPayload = {
   password: string;
   email: string;
 };
+
+
+export default  Canister ({
+
+})
+
+
 
 // Create StableBTreeMap for user data
 const users = new StableBTreeMap<string, User>(0, 44, 1024);
