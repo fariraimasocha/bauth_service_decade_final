@@ -35,7 +35,7 @@ const LoginPayload = Record({
     password: text,
 });
 
-const profilePayload = Record({
+const ProfilePayload = Record({
     id: text,
     username: text,
     description: text,
@@ -81,7 +81,6 @@ export default Canister({
         }
     }),
 
-
     //code to view all users
     viewAllUsers: query([], Vec(Register), () => {
         return userStorage.values();
@@ -101,4 +100,34 @@ export default Canister({
         return Ok(deletedUser.Some);
     }),
 
+    //create a profile using ProfilePayload
+    createProfile: update([ProfilePayload], Result(ProfilePayload, Error), (payload) => {
+        const { id: profileId, ...restPayload } = payload;
+        const profile = { id: profileId || uuidv4(), ...restPayload };
+        userStorage.insert(profile.id, profile);
+        return Ok(profile);
+    }),
+
+    //update a profile
+    updateProfile: update([ProfilePayload], Result(ProfilePayload, Error), (payload) => {
+        const { id: profileId, ...restPayload } = payload;
+        const profile = { id: profileId || uuidv4(), ...restPayload };
+        userStorage.insert(profile.id, profile);
+        return Ok(profile);
+    }),
+
+    //delete a profile 
+    deleteProfile: update([text], Result(ProfilePayload, Error), (id) => {
+        const deletedProfile = userStorage.remove(id);
+        if ('None' in deletedProfile) {
+            return Err({ NotFound: `Couldn't delete the profile with id=${id}. Error 404 profile not fond.` });
+        }
+        return Ok(deletedProfile.Some);
+    }),
+
+    
+
+
+
 });
+
