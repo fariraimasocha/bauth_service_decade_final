@@ -18,12 +18,36 @@ import {
 } from 'azle';
 
 import { v4 as uuidv4 } from 'uuid';
+// import axios from 'axios';
+// import { config } from 'dotenv';
+// config();
+
+// const coinmarketApi = process.env.COINMARKET_API;
+
+
+// const fetchDataFromApi = async () => {
+//   try {
+//     const apiUrl = 'YOUR_API_ENDPOINT';
+//     const response = await axios.get(apiUrl, {
+//       headers: {
+//         'X-CoinMarket-API-Key': coinmarketApi,
+//       },
+//     });
+//     const responseData = response.data;
+//     console.log('API Response:', responseData);
+//   } catch (error) {
+//     console.error('Error fetching data from the API:');
+//   }
+// };
+
+
 
 const loginData = Record({
     id: text,
     name: text,
     password: text
 })
+
 
 const RegisterPayload = Record({
     email: text,
@@ -34,6 +58,10 @@ const LoginPayload = Record({
     email: text,
     password: text,
 });
+
+const CoinData = Record({
+
+})
 
 const ProfilePayload = Record({
     id: text,

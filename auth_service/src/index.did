@@ -1,3 +1,10 @@
 service: () -> {
-    getMessage: () -> (text) query;
+    createProfile: (record {id:text; username:text; description:text; address:text; gender:text; location:text}) -> (variant {Ok:record {id:text; username:text; description:text; address:text; gender:text; location:text}; Err:variant {InvalidPayload:text; NotFound:text}});
+    deleteProfile: (text) -> (variant {Ok:record {id:text; username:text; description:text; address:text; gender:text; location:text}; Err:variant {InvalidPayload:text; NotFound:text}});
+    deleteUser: (text) -> (variant {Ok:record {id:text; password:text; createdAt:nat64; email:text; updatedAt:opt nat64}; Err:variant {InvalidPayload:text; NotFound:text}});
+    logIn: (record {password:text; email:text}) -> (variant {Ok:record {id:text; password:text; createdAt:nat64; email:text; updatedAt:opt nat64}; Err:variant {InvalidPayload:text; NotFound:text}});
+    updateProfile: (record {id:text; username:text; description:text; address:text; gender:text; location:text}) -> (variant {Ok:record {id:text; username:text; description:text; address:text; gender:text; location:text}; Err:variant {InvalidPayload:text; NotFound:text}});
+    userSignUp: (record {password:text; email:text}) -> (variant {Ok:record {id:text; password:text; createdAt:nat64; email:text; updatedAt:opt nat64}; Err:variant {InvalidPayload:text; NotFound:text}});
+    viewAllUsers: () -> (vec record {id:text; password:text; createdAt:nat64; email:text; updatedAt:opt nat64}) query;
+    viewUser: (text) -> (opt record {id:text; password:text; createdAt:nat64; email:text; updatedAt:opt nat64}) query;
 }
