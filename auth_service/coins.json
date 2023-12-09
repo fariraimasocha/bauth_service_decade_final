@@ -1,0 +1,37 @@
+[
+  {
+    "id": "btc",
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "description": "Digital gold",
+    "price": "$50,000"
+  },
+  {
+    "id": "eth",
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "description": "Smart contracts platform",
+    "price": "$3,000"
+  },
+  {
+    "id": "ada",
+    "name": "Cardano",
+    "symbol": "ADA",
+    "description": "Blockchain for the changing world",
+    "price": "$2.50"
+  },
+  {
+    "id": "xrp",
+    "name": "XRP",
+    "symbol": "XRP",
+    "description": "Digital payment protocol",
+    "price": "$1.50"
+  },
+  {
+    "id": "ltc",
+    "name": "Litecoin",
+    "symbol": "LTC",
+    "description": "Silver to Bitcoin's gold",
+    "price": "$150"
+  }
+]
