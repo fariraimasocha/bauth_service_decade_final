@@ -1,130 +1,387 @@
 import {
-    query,
-    update,
-    Canister,
-    text,
-    Record,
-    StableBTreeMap,
-    Ok,
-    None,
-    Some,
-    Err,
-    Vec,
-    Result,
-    nat64,
-    ic,
-    Opt,
-    Variant,
+  Canister,
+  query,
+  text,
+  update,
+  Void,
+  Record,
+  float64,
+  Vec,
+  nat64,
+  StableBTreeMap,
+  nat8,
+  Principal,
+  Err,
+  Ok,
+  Result,
+  ic,
 } from 'azle';
 
-import { v4 as uuidv4 } from 'uuid';
-
-const loginData = Record({
-    id: text,
-    name: text,
-    password: text
-})
-
-const RegisterPayload = Record({
-    email: text,
-    password: text,
+// Loan applicatiom Record
+const LoanApplication = Record({
+  id: Principal,
+  amount: float64,
+  timestamp: nat64,
+  customerID: Principal,
+  operation: text,
 });
 
-const LoginPayload = Record({
-    email: text,
-    password: text,
+//Customer Record
+const Customer = Record({
+  id: Principal,
+  username: text,
+  password: text,
+  amount: float64,
 });
 
-const ProfilePayload = Record({
-    id: text,
-    username: text,
-    description: text,
-    gender: text,
-    location: text,
-    address: text
-})
 
-const Register = Record ({
-    id: text,
-    email: text,
-    password: text,
-    createdAt: nat64,
-    updatedAt: Opt(nat64),
-})
-
-const Error = Variant({
-    NotFound: text,
-    InvalidPayload: text,
+//Loaner Record
+const Loaner = Record({
+  totalDeposit: float64,
+  transactions: Vec(LoanApplication),
+  customers: Vec(Customer),
 });
 
-const userStorage = StableBTreeMap(text, Register, 0);
+//Loaner St
+const LoanerStorage: typeof Loaner = {
+  totalDeposit: 0,
+  transactions: [],
+  customers: [],
+};
+
+const customerStorage = StableBTreeMap(Principal, Customer, 1);
+
+const transactionStorage = StableBTreeMap(Principal, LoanApplication, 2);
+
+let currentCustomer: typeof Customer | null;
 
 export default Canister({
+  getLoanerDetails: query([], Result(Loaner, text), () => {
+    return Ok(LoanerStorage);
+  }),
+  getBalance: query([], Result(text, text), () => {
+    if (!currentCustomer) {
+      return Err('There is no logged in customer');
+    }
+    return Ok(`Your loan balance is ${currentCustomer.amount}`);
+  }),
 
-    //user register
-    userSignUp: update([RegisterPayload], Result(Register, Error), (payload) => {
-        const user = { id: uuidv4(), createdAt: ic.time(), updatedAt: None, ...payload };
-        userStorage.insert(user.id, user);
-        return Ok(user);
-    }),
+  //get loan applications
+  getLoanApplications: query([], Result(Vec(LoanApplication), text), () => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const transactions = transactionStorage.values();
+    const customerTransactions = transactions.filter(
+      (transaction: typeof LoanApplication) =>
+        transaction.customerID === currentCustomer!.id
+    );
+    return Ok(customerTransactions);
+  }),
+ 
+  
+  //create loan applications
+  createLoanApplication: update(
+    [float64, text],
+    Result(text, text),
+    (amount, operation) => {
+      if (!currentCustomer) {
+        return Err('Login please to perform this operation.');
+      }
+      if (currentCustomer.amount < amount) {
+        return Err('Insufficient funds.');
+      }
+      const newTransaction: typeof LoanApplication = {
+        id: generateId(),
+        amount,
+        timestamp: ic.time(),
+        customerID: currentCustomer.id,
+        operation,
+      };
+      transactionStorage.insert(newTransaction.id, newTransaction);
+      currentCustomer.amount -= amount;
+      LoanerStorage.totalDeposit += amount;
+      return Ok(`Loan application ${newTransaction.id} added successfully.`);
+    }
+  ),
 
-    //user login
-    logIn: update([LoginPayload], Result(Register, Error), (payload) => {
-        const { email } = payload;
-        const userFound = userStorage.values().some((user: typeof Register) => user.email === email);
-        if (userFound) {
-            return Ok({ id: uuidv4(), email, password: '********', createdAt: ic.time(), updatedAt: None });
-        } else {
-            return Err({
-                NotFound: `login Failed=${email}. Error 404 user not found.`,
-            });
-        }
-    }),
+  //approve loan application
+  approveLoanApplication: update(
+    [Principal],
+    Result(text, text),
+    (transactionId) => {
+      if (!currentCustomer) {
+        return Err('Login please to perform this operation.');
+      }
+      const transaction = transactionStorage.get(transactionId);
+      if (!transaction) {
+        return Err('Transaction does not exist.');
+      }
+      const customer = customerStorage.get(transaction.customerID);
+      if (!customer) {
+        return Err('Customer does not exist.');
+      }
+      if (LoanerStorage.totalDeposit < transaction.amount) {
+        return Err('Insufficient funds.');
+      }
+      customer.amount += transaction.amount;
+      LoanerStorage.totalDeposit -= transaction.amount;
+      return Ok(`Loan application ${transaction.id} approved successfully.`);
+    }
+  ),
 
-    //code to view all users
-    viewAllUsers: query([], Vec(Register), () => {
-        return userStorage.values();
-    }),
+  //reject loan application
+  rejectLoanApplication: update(
+    [Principal],
+    Result(text, text),
+    (transactionId) => {
+      if (!currentCustomer) {
+        return Err('Login please to perform this operation.');
+      }
+      const transaction = transactionStorage.get(transactionId);
+      if (!transaction) {
+        return Err('Transaction does not exist.');
+      }
+      const customer = customerStorage.get(transaction.customerID);
+      if (!customer) {
+        return Err('Customer does not exist.');
+      }
+      customer.amount += transaction.amount;
+      LoanerStorage.totalDeposit -= transaction.amount;
+      return Ok(`Loan application ${transaction.id} rejected successfully.`);
+    }
+  ),
 
-    //code to view a single user
-    viewUser: query([text], Opt(Register), (id) => {
-        return userStorage.get(id);
-    }),
 
-    //code to delete a usser
-      deleteUser: update([text], Result(Register, Error), (id) => {
-        const deletedUser = userStorage.remove(id);
-        if ('None' in deletedUser) {
-            return Err({ NotFound: `Couldn't delete the user with id=${id}. Error 404 user not fond.` });
-        }
-        return Ok(deletedUser.Some);
-    }),
+  //delete loan application
+  deleteLoanApplication: update(
+    [Principal],
+    Result(text, text),
+    (transactionId) => {
+      if (!currentCustomer) {
+        return Err('Login please to perform this operation.');
+      }
+      const transaction = transactionStorage.get(transactionId);
+      if (!transaction) {
+        return Err('Transaction does not exist.');
+      }
+      const customer = customerStorage.get(transaction.customerID);
+      if (!customer) {
+        return Err('Customer does not exist.');
+      }
+      customer.amount += transaction.amount;
+      LoanerStorage.totalDeposit -= transaction.amount;
+      transactionStorage.delete(transactionId);
+      return Ok(`Loan application ${transaction.id} deleted successfully.`);
+    }
+  ),
 
-    //create a profile using ProfilePayload
-    createProfile: update([ProfilePayload], Result(ProfilePayload, Error), (payload) => {
-        const { id: profileId, ...restPayload } = payload;
-        const profile = { id: profileId || uuidv4(), ...restPayload };
-        userStorage.insert(profile.id, profile);
-        return Ok(profile);
-    }),
+  //loan Calculator
+  loanCalculator: query([float64, nat64], Result(float64, text), (amount, time) => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const interest = 0.1;
+    const totalAmount = amount * (1 + interest) ** Number(time);
+    return Ok(totalAmount);
+  }),
 
-    //update a profile
-    updateProfile: update([ProfilePayload], Result(ProfilePayload, Error), (payload) => {
-        const { id: profileId, ...restPayload } = payload;
-        const profile = { id: profileId || uuidv4(), ...restPayload };
-        userStorage.insert(profile.id, profile);
-        return Ok(profile);
-    }),
+  //loan Tracking
+  loanTracking: query([Principal], Result(LoanApplication, text), (id) => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const transaction = transactionStorage.get(id);
+    if (!transaction) {
+      return Err('Transaction does not exist.');
+    }
+    return Ok(transaction);
+  }),
 
-    //delete a profile 
-    deleteProfile: update([text], Result(ProfilePayload, Error), (id) => {
-        const deletedProfile = userStorage.remove(id);
-        if ('None' in deletedProfile) {
-            return Err({ NotFound: `Couldn't delete the profile with id=${id}. Error 404 profile not fond.` });
-        }
-        return Ok(deletedProfile.Some);
-    }),
+  //credit score monitoring
+  creditScoreMonitoring: query([], Result(nat8, text), () => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const creditScore = Math.floor(Math.random() * 100);
+    return Ok(creditScore);
+  }),
 
-   
+  //Create new customer
+  createCustomer: update(
+    [text, text, float64],
+    Result(text, text),
+    (username, password, amount) => {
+      const customer = customerStorage
+        .values()
+        .filter((c: typeof Customer) => c.username === username)[0];
+      if (customer) {
+        return Err('Customer already exists.');
+      }
+      const newCustomer: typeof Customer = {
+        id: ic.caller(),
+        username,
+        password,
+        amount,
+      };
+
+      console.log(newCustomer.id);
+
+      customerStorage.insert(newCustomer.id, newCustomer);
+      LoanerStorage.totalDeposit += newCustomer.amount;
+      return Ok(`Customer ${newCustomer.username} added successfully.`);
+    }
+  ),
+
+  //get all loan Applications
+  getAllLoanApplications: query([], Result(Vec(LoanApplication), text), () => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    return Ok(transactionStorage.values());
+  }),
+
+  //get specific loan application
+  getSpecificLoanApplication: query([Principal], Result(LoanApplication, text), (id) => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const transaction = transactionStorage.get(id);
+    if (!transaction) {
+      return Err('Transaction does not exist.');
+    }
+    return Ok(transaction);
+  }),
+
+  //update loan Application
+  updateLoanApplication: update(
+    [Principal, float64, text],
+    Result(text, text),
+    (id, amount, operation) => {
+      if (!currentCustomer) {
+        return Err('Login please to perform this operation.');
+      }
+      const transaction = transactionStorage.get(id);
+      if (!transaction) {
+        return Err('Transaction does not exist.');
+      }
+      transaction.amount = amount;
+      transaction.operation = operation;
+      return Ok(`Loan application ${transaction.id} updated successfully.`);
+    }
+  ),
+
+
+//authenticate a Customer
+  authenticateCustomer: update(
+    [text, text],
+    Result(text, text),
+    (username, password) => {
+      const customer = customerStorage
+        .values()
+        .filter((c: typeof Customer) => c.username === username)[0];
+      if (!customer) {
+        return Err('Customer does not exist.');
+      }
+      if (customer.password !== password) {
+        return Err('Customer with provided credentials does not exist.');
+      }
+      currentCustomer = customer;
+      return Ok('Logged in');
+    }
+  ),
+
+  //Function to Signout
+  signOut: update([], Result(text, text), () => {
+    if (!currentCustomer) {
+      return Err('There is no logged in customer.');
+    }
+    currentCustomer = null;
+    return Ok('Logged out.');
+  }),
+
+
+  //get authenticated
+  getAuthenticatedCustomer: query([], Result(text, text), () => {
+    if (!currentCustomer) {
+      return Err('There is no logged in customer.');
+    }
+    return Ok(currentCustomer.username);
+  }),
+
+  //view all customers
+  viewAllCustomers: query([], Result(Vec(Customer), text), () => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    return Ok(customerStorage.values());
+  }),
+
+  //view specific customer
+  viewSpecificCustomer: query([Principal], Result(Customer, text), (id) => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const customer = customerStorage.get(id);
+    if (!customer) {
+      return Err('Customer does not exist.');
+    }
+    return Ok(customer);
+  }),
+
+  //delete a Customer
+  deleteCustomer: update([Principal], Result(text, text), (id) => {
+    if (!currentCustomer) {
+      return Err('Login please to perform this operation.');
+    }
+    const customer = customerStorage.get(id);
+    if (!customer) {
+      return Err('Customer does not exist.');
+    }
+    customerStorage.delete(id);
+    return Ok(`Customer ${customer.username} deleted successfully.`);
+  }),
+
+  //update a Customer
+  updateCustomer: update(
+    [Principal, text, text, float64],
+    Result(text, text),
+    (id, username, password, amount) => {
+      if (!currentCustomer) {
+        return Err('Login please to perform this operation.');
+      }
+      const customer = customerStorage.get(id);
+      if (!customer) {
+        return Err('Customer does not exist.');
+      }
+      customer.username = username;
+      customer.password = password;
+      customer.amount = amount;
+      return Ok(`Customer ${customer.username} updated successfully.`);
+    }
+  ),
+  
+
 });
 
+function generateId(): Principal {
+  const randomBytes = new Array(29)
+    .fill(0)
+    .map((_) => Math.floor(Math.random() * 256));
+
+  return Principal.fromUint8Array(Uint8Array.from(randomBytes));
+}
+
+
+globalThis.crypto = {
+  // @ts-ignore
+  getRandomValues: () => {
+    let array = new Uint8Array(32);
+
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+
+    return array;
+  },
+};
